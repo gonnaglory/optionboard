@@ -1,0 +1,12 @@
+fastapi
+pydantic-settings
+aiohttp
+uvicorn
+aiofiles
+scipy
+sqlalchemy
+scipy
+asyncpg
+aiocache
+ujson
+numba

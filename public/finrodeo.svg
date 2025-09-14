@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <defs>
+    <!-- Premium gold gradient for the diamond stroke -->
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F5E199"/>
+      <stop offset="35%" stop-color="#E6C65B"/>
+      <stop offset="70%" stop-color="#CDA434"/>
+      <stop offset="100%" stop-color="#F7E7AA"/>
+    </linearGradient>
+
+    <!-- Subtle shadow to give depth while staying minimalist -->
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.18"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="#FFFFFF"/>
+
+  <!-- Diamond (rotated square) with rounded joins -->
+  <path d="M 500 60 L 940 500 L 500 940 L 60 500 Z"
+        fill="none"
+        stroke="url(#gold)"
+        stroke-width="82"
+        stroke-linejoin="round"
+        filter="url(#softShadow)"/>
+
+  <!-- Letter F (rounded, balanced inside the diamond) -->
+  <!-- Vertical stem -->
+  <path d="M 520 220 L 520 820"
+        fill="none"
+        stroke="#111111"
+        stroke-width="92"
+        stroke-linecap="round"/>
+
+  <!-- Top arm -->
+  <path d="M 520 310 L 735 310"
+        fill="none"
+        stroke="#111111"
+        stroke-width="92"
+        stroke-linecap="round"/>
+
+  <!-- Middle arm -->
+  <path d="M 520 530 L 705 530"
+        fill="none"
+        stroke="#111111"
+        stroke-width="92"
+        stroke-linecap="round"/>
+</svg>
