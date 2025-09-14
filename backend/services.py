@@ -186,7 +186,13 @@ async def actual_futures(base: str, current_date: datetime) -> str:
 
 # ---------------- VOLATILITY ----------------
 
-async def hist_vol(underlying: str) -> list[tuple[datetime, float]]:
+async def hist_vol(underlying: str) -> Optional[float]:
+    """Return last historical volatility for ``underlying`` or ``None``.
+
+    The function fetches OHLC candles from the database and calculates the
+    rolling standard deviation of log returns. If there is not enough data to
+    perform the calculation, ``None`` is returned instead of an empty list.
+    """
     logger.debug("Calculating hist_vol for %s", underlying)
     try:
         int(underlying[-1])
@@ -194,21 +200,18 @@ async def hist_vol(underlying: str) -> list[tuple[datetime, float]]:
     except ValueError:
         pass
 
-
     t0 = time.perf_counter()
     data = await get_candles_from_db(underlying)
     logger.debug("DB fetch took %.3f sec", time.perf_counter() - t0)
     if not data:
         logger.debug("No data for hist_vol: %s", underlying)
-        return []
+        return None  # no candle data available
 
     logger.debug("hist_vol got %d records from DB", len(data))
-
 
     t1 = time.perf_counter()
     data_sorted = sorted(data, key=lambda x: x[0])
     logger.debug("Sorting took %.3f sec", time.perf_counter() - t1)
-
 
     t2 = time.perf_counter()
     timestamps = np.array([t for t, _ in data_sorted])
@@ -216,12 +219,10 @@ async def hist_vol(underlying: str) -> list[tuple[datetime, float]]:
     log_returns = np.diff(np.log(prices))
     logger.debug("NumPy prep took %.3f sec", time.perf_counter() - t2)
 
-
     window = settings.HIST_WINDOW_MINUTES
     if len(log_returns) < window:
         logger.debug("Not enough data for hist_vol: %d < %d", len(log_returns), window)
-        return []
-
+        return None  # insufficient data for window
 
     t3 = time.perf_counter()
     cumsum = np.cumsum(np.insert(log_returns, 0, 0.0))
@@ -230,17 +231,22 @@ async def hist_vol(underlying: str) -> list[tuple[datetime, float]]:
     rolling_mean = (cumsum[n:] - cumsum[:-n]) / n
     rolling_var = (cumsum2[n:] - cumsum2[:-n]) / n - rolling_mean**2
     rolling_std = np.sqrt(rolling_var)
-    hist_vol = np.round(rolling_std * math.sqrt(settings.TRADING_DAYS_PER_YEAR * settings.MINUTES_PER_DAY), 4)
-    vol_timestamps = timestamps[1:][n-1:]
+    hist_vol = np.round(
+        rolling_std * math.sqrt(settings.TRADING_DAYS_PER_YEAR * settings.MINUTES_PER_DAY),
+        4,
+    )
+    vol_timestamps = timestamps[1:][n - 1:]
     logger.debug("NumPy calc took %.3f sec", time.perf_counter() - t3)
-
 
     t4 = time.perf_counter()
     # await save_column(underlying, "hist_vol", list(zip(vol_timestamps, hist_vol)))
     # logger.debug("DB save took %.3f sec", time.perf_counter() - t4)
 
-
-    logger.debug("hist_vol calculation done in %.3f sec, last value=%.4f", time.perf_counter() - t0, hist_vol[-1])
+    logger.debug(
+        "hist_vol calculation done in %.3f sec, last value=%.4f",
+        time.perf_counter() - t0,
+        hist_vol[-1],
+    )
     return float(hist_vol[-1])
 
 def expiry_time(expiry_date: str) -> int:
