@@ -106,10 +106,10 @@ class MOEXClient(HTTPClient):
             
             # Получаем историческую волатильность
             hist_vol_result = await hist_vol(asset)
-            if not hist_vol_result:
+            if hist_vol_result is None:
                 logger.warning(f"No historical volatility for {asset}")
                 return
-            
+
             hist_vol_value = hist_vol_result  # Берем значение волатильности
             
             # Обрабатываем ВСЕ опционы актива сразу
