@@ -5,7 +5,7 @@ from datetime import datetime, time
 class Settings(BaseSettings):
     # --- Keys / Secrets ---
     KEY: str = ""
-    SQL_DATABASE_URL: str = ""
+    SQL_DATABASE_URL: str = "postgresql+asyncpg://postgres:cbolsaty@db:5432/postgres"
     
     # --- Paths ---
     DATA_FOLDER: Path = Path(__file__).parent / "data"
@@ -55,14 +55,13 @@ class Settings(BaseSettings):
     
         # клиринги
     
-    HOLIDAYS: list = [
-        (datetime(2025, 11, 3),
-         datetime(2025, 11, 4),
-         datetime(2025, 12, 31),
-        )
+    HOLIDAYS: list[datetime.date] = [
+        datetime(2025, 11, 3).date(),
+        datetime(2025, 11, 4).date(),
+        datetime(2025, 12, 31).date(),
     ]
 
 
-    model_config = SettingsConfigDict(env_file='.env')
+    # model_config = SettingsConfigDict(env_file='.env')
 
 settings = Settings()
