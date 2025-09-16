@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Request, Response
-import ujson, aiofiles
+import ujson, aiofiles, uvicorn
 from contextlib import asynccontextmanager
 
 from .http_client import MOEXClient
@@ -76,5 +76,5 @@ async def get_option(asset: str):
     #         detail=f"Error processing request: {str(e)}"
     #     )
     
-# if __name__ == '__main__':
-#     uvicorn src.main:app --reload
+if __name__ == '__main__':
+    uvicorn.run( "src.main:app",host="0.0.0.0")

@@ -1,0 +1,52 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: optionboard-backend
+    restart: unless-stopped
+    expose:
+      - "8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:cbolsaty@db:5432/postgres
+    depends_on:
+      - db
+    networks:
+      - optionboard
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: optionboard-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - optionboard
+
+  db:
+    image: postgres:17
+    container_name: optionboard-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=cbolsaty
+      - POSTGRES_DB=postgres
+      - POSTGRES_MAX_CONNECTIONS=200
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - optionboard
+
+networks:
+  optionboard:
+    driver: bridge
+
+volumes:
+  pgdata:

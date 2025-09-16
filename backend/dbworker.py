@@ -20,7 +20,7 @@ engine = create_async_engine(
     settings.SQL_DATABASE_URL,
     echo=False,
     future=True,
-    pool_size=90,
+    pool_size=60,
     max_overflow=40,
     pool_timeout=60,
 )
