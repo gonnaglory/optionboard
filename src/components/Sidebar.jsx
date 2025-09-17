@@ -1,11 +1,18 @@
 import React from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import assets from "../../backend/data/UNDERLYINGASSETS.json";
 import { getLogo } from "../utils/getLogo";
 
 const Sidebar = () => {
   const { asset } = useParams();
+  const [assets, setAssets] = useState([]);
+
+  useEffect(() => {
+    fetch("http://localhost:8000/") // ⚠️ аналогично заменить на API_URL
+      .then((res) => res.json())
+      .then((data) => setAssets(data.available_options || []))
+      .catch((err) => console.error("Ошибка загрузки активов:", err));
+  }, []);
 
   return (
     <motion.aside

@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 
-from .config import settings
+from backend.config import settings
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:

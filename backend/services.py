@@ -8,8 +8,8 @@ from scipy.optimize import brentq
 from datetime import datetime, timedelta
 from calendar import Calendar, THURSDAY
 
-from .dbworker import get_candles_from_db
-from .config import settings
+from backend.dbworker import get_candles_from_db
+from backend.config import settings
 
 # ---------------- LOGGER ----------------
 

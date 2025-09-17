@@ -4,10 +4,10 @@ from pathlib import Path
 from typing import Any, List
 from datetime import datetime, timedelta, timezone
 
-from .dbworker import get_last_candle_date, save_candles
-from .services import candles, actual_futures, hist_vol
-from .config import settings
-from .vectorized_calculations import process_asset_options
+from backend.dbworker import get_last_candle_date, save_candles
+from backend.services import candles, actual_futures, hist_vol
+from backend.config import settings
+from backend.vectorized_calculations import process_asset_options
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:
