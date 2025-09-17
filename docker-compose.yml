@@ -1,21 +1,18 @@
-version: "3.9"
-
 services:
-  optionboard-backend:
+  backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
     depends_on:
       - db
     secrets:
-      - api_key
       - db_user
       - db_pass
       - db_name
     ports:
       - "8000:8000"
 
-  optionboard-frontend:
+  frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
@@ -40,8 +37,6 @@ volumes:
   pgdata:
 
 secrets:
-  api_key:
-    file: ./run/secrets/api_key
   db_user:
     file: ./run/secrets/db_user
   db_pass:
