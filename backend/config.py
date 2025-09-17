@@ -4,8 +4,13 @@ from datetime import datetime, time
 
 class Settings(BaseSettings):
     # --- Keys / Secrets ---
-    KEY: str = ""
-    SQL_DATABASE_URL: str = "postgresql+asyncpg://postgres:cbolsaty@db:5432/postgres"
+    MOEX_API_KEY: str = ""
+    DBUSER: str = ""
+    DBPASS: str = ""
+    DBNAME: str = ""
+    
+    # --- Database ---
+    SQL_DATABASE_URL: str = ""
     
     # --- Paths ---
     DATA_FOLDER: Path = Path(__file__).parent / "data"
@@ -61,7 +66,26 @@ class Settings(BaseSettings):
         datetime(2025, 12, 31).date(),
     ]
 
-
-    # model_config = SettingsConfigDict(env_file='.env')
+    @staticmethod
+    def _read_secret(secret_name: str) -> str:
+        path = Path(f"/run/secrets/{secret_name}")
+        if path.exists():
+            return path.read_text().strip()
+        return ""
+    
+    model_config = SettingsConfigDict(env_file='.env')
 
 settings = Settings()
+
+if not settings.MOEX_API_KEY:
+    settings.MOEX_API_KEY = settings._read_secret("moex_api_key")
+if not settings.DBUSER:
+    settings.DBUSER = settings._read_secret("db_user")
+if not settings.DBPASS:
+    settings.DBPASS = settings._read_secret("db_pass")
+if not settings.DBNAME:
+    settings.DBNAME = settings._read_secret("db_name")
+
+# Формируем строку подключения, если её нет
+if not settings.SQL_DATABASE_URL and all([settings.DBUSER, settings.DBPASS, settings.DBNAME]):
+    settings.SQL_DATABASE_URL = f"postgresql+asyncpg://{settings.DBUSER}:{settings.DBPASS}@db:5432/{settings.DBNAME}"

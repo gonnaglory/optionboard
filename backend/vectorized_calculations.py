@@ -5,7 +5,7 @@ import math
 from typing import List, Tuple, Dict, Any
 import asyncio
 
-from .config import settings
+from backend.config import settings
 
 # ---------------- Numba-УСКОРЕННЫЕ ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ----------------
 

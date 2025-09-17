@@ -2,9 +2,9 @@ from fastapi import FastAPI, HTTPException, Request, Response
 import ujson, aiofiles, uvicorn
 from contextlib import asynccontextmanager
 
-from .http_client import MOEXClient
-from .models import OptionData
-from .config import settings 
+from backend.http_client import MOEXClient
+from backend.models import OptionData
+from backend.config import settings 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -76,5 +76,5 @@ async def get_option(asset: str):
     #         detail=f"Error processing request: {str(e)}"
     #     )
     
-if __name__ == '__main__':
-    uvicorn.run( "src.main:app",host="0.0.0.0")
+# if __name__ == '__main__':
+#     uvicorn.run( "backend.main:app",host="0.0.0.0")

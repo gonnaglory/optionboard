@@ -1,9 +1,18 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import assets from "../../backend/data/UNDERLYINGASSETS.json";
 import { getLogo } from "../utils/getLogo";
 
+
+
 const Showcase = () => {
+    const [assets, setAssets] = useState([]);
+
+  useEffect(() => {
+    fetch("http://localhost:8000/") // ⚠️ при продакшене заменить на API_URL из .env
+      .then((res) => res.json())
+      .then((data) => setAssets(data.available_options || []))
+      .catch((err) => console.error("Ошибка загрузки активов:", err));
+  }, []);
   return (
     <div className="p-12 animate-fade-in">
       <h1 className="text-4xl font-bold tracking-tight text-slate-100 mb-12">
