@@ -14,7 +14,7 @@ jobs:
       - name: Copy repo to server
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: "2a03:6f00:a::1:7d4"
+          host: "[2a03:6f00:a::1:7d4]"
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "."
