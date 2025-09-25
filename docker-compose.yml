@@ -7,12 +7,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    networks:
-      - app-network
     depends_on:
       - db
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     secrets:
       - db_user
       - db_pass
