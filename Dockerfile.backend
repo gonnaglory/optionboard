@@ -4,10 +4,21 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# Чтобы pip быстрее работал и не падал по таймаутам
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl iputils-ping netcat \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # зависимости
 COPY backend/requirements.txt .
+
+# Настройки pip: таймауты, повторные попытки, IPv4
+ENV PIP_DEFAULT_TIMEOUT=100 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
 RUN pip install --no-cache-dir -r requirements.txt
 
 # код приложения

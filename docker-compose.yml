@@ -1,17 +1,16 @@
-networks:
-  app-network:
-    driver: bridge
-
 services:
-  backend:
+  optionboard-backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    depends_on:
-      - db
+    container_name: optionboard-backend
     dns:
       - 8.8.8.8
       - 1.1.1.1
+    networks:
+      - app-network
+    depends_on:
+      - db
     secrets:
       - db_user
       - db_pass
@@ -39,6 +38,12 @@ services:
       POSTGRES_DB_FILE: /run/secrets/db_name
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
   pgdata:
