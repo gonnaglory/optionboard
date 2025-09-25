@@ -33,4 +33,4 @@ jobs:
             echo "${{ secrets.DBUSER }}" > run/secrets/db_user
             echo "${{ secrets.DBPASS }}" > run/secrets/db_pass
             echo "${{ secrets.DBNAME }}" > run/secrets/db_name
-            docker compose up -d --build
+            docker compose up -d --build --network=host
