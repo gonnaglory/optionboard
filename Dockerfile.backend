@@ -6,7 +6,7 @@ ENV PYTHONUNBUFFERED=1
 
 # Чтобы pip быстрее работал и не падал по таймаутам
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl iputils-ping netcat \
+    curl iputils-ping netcat-traditional \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
