@@ -16,7 +16,7 @@ services:
       - db_pass
       - db_name
     ports:
-      - "8000:8000"
+      - "80:8000"
 
   frontend:
     build:
