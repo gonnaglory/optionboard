@@ -25,11 +25,10 @@ services:
   frontend:
     build:
       context: .
-    dockerfile: Dockerfile.frontend
+      dockerfile: Dockerfile.frontend
     ports:
       - "3000:3000"
-    # (не обязательно) можно тоже посадить в obnet, если ему нужен бэкенд по имени:
-    # networks: [obnet]
+    networks: [obnet]
 
   db:
     image: postgres:15                 # зафиксировали версию
