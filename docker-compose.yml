@@ -4,11 +4,6 @@ services:
       context: .
       dockerfile: Dockerfile.backend
     container_name: optionboard-backend
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
-    networks:
-      - app-network
     depends_on:
       - db
     secrets:
@@ -38,15 +33,6 @@ services:
       POSTGRES_DB_FILE: /run/secrets/db_name
     volumes:
       - pgdata:/var/lib/postgresql/data
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
-
-volumes:
-  pgdata:
 
 secrets:
   db_user:
