@@ -3,7 +3,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: optionboard-backend
     depends_on:
       db:
         condition: service_healthy     # дождаться готовности БД
@@ -42,7 +41,7 @@ services:
       POSTGRES_USER_FILE: /run/secrets/db_user
       POSTGRES_PASSWORD_FILE: /run/secrets/db_pass
       POSTGRES_DB_FILE: /run/secrets/db_name
-    command: ["postgres", "-c", "listen_addresses=*", "max_connections=200"]   # слушаем все интерфейсы
+    command: ["postgres", "-c", "listen_addresses=*"]   # слушаем все интерфейсы
     ports:
       - "5432:5432"
     volumes:
