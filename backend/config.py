@@ -86,6 +86,4 @@ settings.DBPASS = settings._read_secret("db_pass")
 
 settings.DBNAME = settings._read_secret("db_name")
 
-# Формируем строку подключения, если её нет
-if not settings.SQL_DATABASE_URL and all([settings.DBUSER, settings.DBPASS, settings.DBNAME]):
-    settings.SQL_DATABASE_URL = f"postgresql+asyncpg://{settings.DBUSER}:{settings.DBPASS}@db:5432/{settings.DBNAME}"
+settings.SQL_DATABASE_URL = f"postgresql+asyncpg://{settings.DBUSER}:{settings.DBPASS}@db:5432/{settings.DBNAME}"
