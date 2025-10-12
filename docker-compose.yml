@@ -31,8 +31,8 @@ services:
     networks: [obnet]
 
   db:
-    image: postgres:15                 # зафиксировали версию
-    container_name: optionboard-db-1
+    image: postgres
+    container_name: database
     restart: unless-stopped
     secrets:
       - db_user
@@ -49,10 +49,11 @@ services:
       - pgdata:/var/lib/postgresql/data
     networks: [obnet]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U $$(cat /run/secrets/db_user) -d $$(cat /run/secrets/db_name)"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 || exit 1"]
+      interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 12
+      start_period: 20s
 
 networks:
   obnet:
