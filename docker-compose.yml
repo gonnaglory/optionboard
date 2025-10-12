@@ -5,11 +5,19 @@ services:
       dockerfile: Dockerfile.backend
     container_name: optionboard-backend
     depends_on:
-      - db
+      db:
+        condition: service_healthy     # дождаться готовности БД
     secrets:
       - db_user
       - db_pass
       - db_name
+    environment:
+      # если в коде сборка DSN из secrets, этого достаточно:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER_FILE: /run/secrets/db_user
+      DB_PASSWORD_FILE: /run/secrets/db_pass
+      DB_NAME_FILE: /run/secrets/db_name
     ports:
       - "80:8000"
     networks: [obnet]
@@ -17,13 +25,16 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: Dockerfile.frontend
+    dockerfile: Dockerfile.frontend
     ports:
       - "3000:3000"
+    # (не обязательно) можно тоже посадить в obnet, если ему нужен бэкенд по имени:
+    # networks: [obnet]
 
   db:
-    image: postgres
-    restart: always
+    image: postgres:15                 # зафиксировали версию
+    container_name: optionboard-db-1
+    restart: unless-stopped
     secrets:
       - db_user
       - db_pass
@@ -32,11 +43,17 @@ services:
       POSTGRES_USER_FILE: /run/secrets/db_user
       POSTGRES_PASSWORD_FILE: /run/secrets/db_pass
       POSTGRES_DB_FILE: /run/secrets/db_name
+    command: ["postgres", "-c", "listen_addresses=*"]   # слушаем все интерфейсы
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks: [obnet]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U $$(cat /run/secrets/db_user) -d $$(cat /run/secrets/db_name)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
 networks:
   obnet:

@@ -1,6 +1,6 @@
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from datetime import datetime, time
+from datetime import datetime, date, time
 
 class Settings(BaseSettings):
     # --- Keys / Secrets ---
