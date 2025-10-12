@@ -12,6 +12,7 @@ services:
       - db_name
     ports:
       - "80:8000"
+    networks: [obnet]
 
   frontend:
     build:
@@ -21,7 +22,7 @@ services:
       - "3000:3000"
 
   db:
-    image: postgres:17
+    image: postgres
     restart: always
     secrets:
       - db_user
@@ -33,7 +34,16 @@ services:
       POSTGRES_DB_FILE: /run/secrets/db_name
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks: [obnet]
 
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+networks:
+  obnet:
 
 volumes:
   pgdata:
