@@ -34,6 +34,10 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+
+volumes:
+  pgdata:
+
 secrets:
   db_user:
     file: ./run/secrets/db_user
