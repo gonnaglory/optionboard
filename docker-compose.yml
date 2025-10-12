@@ -41,7 +41,7 @@ services:
       POSTGRES_USER_FILE: /run/secrets/db_user
       POSTGRES_PASSWORD_FILE: /run/secrets/db_pass
       POSTGRES_DB_FILE: /run/secrets/db_name
-    command: ["postgres", "-c", "listen_addresses=*"]   # слушаем все интерфейсы
+    command: ["postgres", "-c", "max_connections=100", "-c", "listen_addresses=*"]
     ports:
       - "5432:5432"
     volumes:

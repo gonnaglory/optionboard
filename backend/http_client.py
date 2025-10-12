@@ -259,7 +259,7 @@ class MOEXClient(HTTPClient):
             current_date += timedelta(days=1)
  
         # Параллельная загрузка (ограничиваем количество одновременно выполняемых задач)
-        sem = asyncio.Semaphore(90)
+        sem = asyncio.Semaphore(40)
 
         async def sem_task(date):
             async with sem:
