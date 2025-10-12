@@ -30,8 +30,8 @@ jobs:
             cd ~/optionboard
             mkdir -p run/secrets
             echo "${{ secrets.API_KEY }}" > run/secrets/api_key
-            echo "${{ secrets.DBUSER }}" > run/secrets/db_user
-            echo "${{ secrets.DBPASS }}" > run/secrets/db_pass
-            echo "${{ secrets.DBNAME }}" > run/secrets/db_name
+            echo "${{ secrets.POSTGRESUSER }}" > run/secrets/db_user
+            echo "${{ secrets.POSTGRESPASS }}" > run/secrets/db_pass
+            echo "${{ secrets.POSTGRESDB }}" > run/secrets/db_name
             docker compose build
             docker compose up -d
