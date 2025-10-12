@@ -73,7 +73,7 @@ class Settings(BaseSettings):
             return path.read_text().strip()
         return ""
     
-    model_config = SettingsConfigDict(env_file='.env')
+    # model_config = SettingsConfigDict(env_file='.env')
 
 settings = Settings()
 
