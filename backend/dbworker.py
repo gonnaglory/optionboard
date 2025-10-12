@@ -14,8 +14,7 @@ from backend.config import settings
 logger = logging.getLogger(__name__)
 if not logger.handlers:
     logging.basicConfig(level=settings.LOG_LEVEL, format=settings.LOG_FORMAT)
-
-print(settings.SQL_DATABASE_URL) 
+ 
 # Асинхронный движок и сессии
 engine = create_async_engine(
     settings.SQL_DATABASE_URL,

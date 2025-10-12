@@ -77,14 +77,14 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-if not settings.MOEX_API_KEY:
-    settings.MOEX_API_KEY = settings._read_secret("moex_api_key")
-if not settings.DBUSER:
-    settings.DBUSER = settings._read_secret("db_user")
-if not settings.DBPASS:
-    settings.DBPASS = settings._read_secret("db_pass")
-if not settings.DBNAME:
-    settings.DBNAME = settings._read_secret("db_name")
+
+settings.MOEX_API_KEY = settings._read_secret("moex_api_key")
+
+settings.DBUSER = settings._read_secret("db_user")
+
+settings.DBPASS = settings._read_secret("db_pass")
+
+settings.DBNAME = settings._read_secret("db_name")
 
 # Формируем строку подключения, если её нет
 if not settings.SQL_DATABASE_URL and all([settings.DBUSER, settings.DBPASS, settings.DBNAME]):
