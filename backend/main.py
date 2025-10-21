@@ -15,7 +15,7 @@ async def lifespan(app: FastAPI):
         await app.state.moex_client.get_options()
         async with aiofiles.open(settings.DATA_FOLDER / "UNDERLYINGASSETS.json", "r", encoding="utf-8") as f:
             assets = ujson.loads(await f.read())
-            for asset in assets:
+            for asset in assets[:10]:
                 await app.state.moex_client.load_candles(asset)
                 await app.state.moex_client.add_params(asset)
 

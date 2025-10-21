@@ -50,6 +50,13 @@ async def _get_candle_table(underlying: str) -> Table:
                 )
                 metadata.create_all(sync_conn, tables=[table])
 
+                # sync_conn.execute(
+                #     f"""
+                #     SELECT create_hypertable('{table_name}', 'timestamp', 
+                #         if_not_exists => TRUE, migrate_data => TRUE);
+                #     """
+                # )
+                
                 return table
 
         table = await conn.run_sync(sync_op)

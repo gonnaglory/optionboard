@@ -32,6 +32,6 @@ jobs:
             echo "${{ secrets.API_KEY }}" > run/secrets/api_key
             echo "${{ secrets.POSTGRESUSER }}" > run/secrets/db_user
             echo "${{ secrets.POSTGRESPASS }}" > run/secrets/db_pass
-            echo "${{ secrets.POSTGRESDB }}" > run/secrets/db_name
+            echo "${{ secrets.POSTGRESHOST }}" > run/secrets/db_host
             docker compose build
             docker compose up -d

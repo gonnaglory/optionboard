@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     MOEX_API_KEY: str = ""
     DBUSER: str = ""
     DBPASS: str = ""
-    DBNAME: str = ""
+    DBHOST: str = ""
     
     # --- Database ---
     SQL_DATABASE_URL: str = ""
@@ -84,6 +84,6 @@ settings.DBUSER = settings._read_secret("db_user")
 
 settings.DBPASS = settings._read_secret("db_pass")
 
-settings.DBNAME = settings._read_secret("db_name")
+settings.DBHOST = settings._read_secret("db_host")
 
-settings.SQL_DATABASE_URL = f"postgresql+asyncpg://{settings.DBUSER}:{settings.DBPASS}@db:5432/{settings.DBNAME}"
+settings.SQL_DATABASE_URL = f"postgresql+asyncpg://{settings.DBUSER}:{settings.DBPASS}@{settings.DBHOST}:5432/postgres"
