@@ -3,9 +3,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    depends_on:
-      db:
-        condition: service_healthy     # дождаться готовности БД
     secrets:
       - db_user
       - db_pass
