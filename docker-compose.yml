@@ -9,14 +9,13 @@ services:
     secrets:
       - db_user
       - db_pass
-      - db_name
+      - db_host
     environment:
       # если в коде сборка DSN из secrets, этого достаточно:
-      DB_HOST: db
       DB_PORT: "5432"
       DB_USER_FILE: /run/secrets/db_user
       DB_PASSWORD_FILE: /run/secrets/db_pass
-      DB_NAME_FILE: /run/secrets/db_name
+      DB_HOST_FILE: /run/secrets/db_host
     ports:
       - "80:8000"
     networks: [obnet]
@@ -31,52 +30,13 @@ services:
       - "3000:3000"
     networks: [obnet]
 
-  db:
-    image: postgres
-    container_name: database
-    restart: unless-stopped
-    secrets:
-      - db_user
-      - db_pass
-      - db_name
-    environment:
-      POSTGRES_USER_FILE: /run/secrets/db_user
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_pass
-      POSTGRES_DB_FILE: /run/secrets/db_name
-    command: ["postgres",
-          "-c", "listen_addresses=*",
-          "-c", "max_connections=80",        # хватит с запасом
-          "-c", "shared_buffers=128MB",      # 25% RAM на 1 ГБ — ок
-          "-c", "work_mem=4MB",
-          "-c", "maintenance_work_mem=64MB",
-          "-c", "effective_cache_size=512MB",
-          "-c", "wal_buffers=4MB",
-          "-c", "max_wal_size=512MB",
-          "-c", "min_wal_size=128MB"]
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    networks: [obnet]
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 || exit 1"]
-      interval: 5s
-      timeout: 5s
-      retries: 12
-      start_period: 20s
-    mem_limit: 512m
-    cpus: 0.9
-
 networks:
   obnet:
-
-volumes:
-  pgdata:
 
 secrets:
   db_user:
     file: ./run/secrets/db_user
   db_pass:
     file: ./run/secrets/db_pass
-  db_name:
-    file: ./run/secrets/db_name
+  db_host:
+    file: ./run/secrets/db_host
