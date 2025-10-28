@@ -13,7 +13,8 @@ async def lifespan(app: FastAPI):
     # Singletons on app.state
     app.state.moex_client = MOEXClient(base_url="https://iss.moex.com")
     app.state.redis = get_redis()
-
+    sem = asyncio.Semaphore(2)
+    
     # Warmup on startup
     try:
         await app.state.moex_client.get_options()
@@ -25,14 +26,16 @@ async def lifespan(app: FastAPI):
         warm_assets = assets[:10]
 
         async def warm_one(asset: str):
-            try:
-                await app.state.moex_client.load_candles(asset)
-                await app.state.moex_client.add_params(asset)
-            except Exception:
-                # Log if you have logging; don't fail startup on one asset
-                pass
+            async with sem:  # гарантирует не более max_concurrent активных задач
+                try:
+                    await app.state.moex_client.load_candles(asset)
+                    await app.state.moex_client.add_params(asset)
+                except Exception:
+                    # Можно добавить логирование
+                    pass
 
         await asyncio.gather(*(warm_one(a) for a in warm_assets))
+        
         yield
     finally:
         await app.state.moex_client.close()
