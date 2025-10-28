@@ -127,108 +127,7 @@ class MOEXClient(HTTPClient):
                         
         except Exception as e:
             logger.error(f"Error adding params to {asset}: {e}")
-    
-    # async def add_params(self, asset: str):
-    #     """Добавляет расчетные параметры к конкретному активу"""
-    #     try:
-    #         asset_file = settings.DATA_FOLDER / f"{asset}.json"
-    #         if not asset_file.exists():
-    #             logger.warning(f"File {asset_file} not found")
-    #             return
-            
-    #         # Загружаем данные опционов
-    #         async with aiofiles.open(asset_file, "r", encoding="utf-8") as f:
-    #             options_data = ujson.loads(await f.read())
-            
-    #         logger.debug(f"Loaded {len(options_data)} options for {asset}")
-            
-    #         # Получаем историческую волатильность
-    #         hist_vol_result = await hist_vol(asset)
-    #         logger.debug(f"Historical volatility for {asset}: {hist_vol_result}")
-            
-    #         # Добавляем параметры к каждому опциону
-    #         updated_count = 0
-    #         for i, option in enumerate(options_data):
-    #             success = await self._add_option_params(option, asset, hist_vol_result)
-    #             if success:
-    #                 updated_count += 1
-    #                 if i < 5:  # Логируем первые 5 успешных опционов для отладки
-    #                     logger.debug(f"Successfully added params to {option.get('SECID')}")
-            
-    #         # Сохраняем обновленные данные обратно в файл
-    #         await save_json(options_data, asset_file)
-    #         logger.info(f"Added params to {asset} - updated {updated_count}/{len(options_data)} options")
-            
-    #         # Для отладки: выведем первый опцион с параметрами
-    #         if updated_count > 0 and len(options_data) > 0:
-    #             first_option = options_data[0]
-    #             logger.debug(f"First option params: { {k: v for k, v in first_option.items() if k in ['HIST_VOL', 'IMPLIED_VOL', 'THEORETICAL_PRICE', 'DELTA', 'GAMMA', 'VEGA', 'THETA']} }")
-            
-    #     except Exception as e:
-    #         logger.error(f"Error adding params to {asset}: {e}")
-    
-    # async def _add_option_params(self, option: dict, underlying: str, hist_vol_result) -> bool:
-    #     """Добавляет расчетные параметры к одному опциону, возвращает True если успешно"""
-    #     try:
-    #         # Базовые параметры для расчетов
-    #         F0 = option.get('UNDERLYINGSETTLEPRICE', 0)
-    #         K = option.get('STRIKE', 0)
-    #         expiry_date = option.get('LASTTRADEDATE')
-    #         r = settings.IV_RATE
-    #         option_type = option.get('OPTIONTYPE', 'C')
-    #         prev_settle_price = option.get('PREVSETTLEPRICE', 0)
-            
-    #         logger.debug(f"Processing option {option.get('SECID')}: F0={F0}, K={K}, expiry={expiry_date}, type={option_type}, prev_price={prev_settle_price}")
-            
-    #         if F0 <= 0 or K <= 0 or not expiry_date:
-    #             logger.debug(f"Skipping option {option.get('SECID')}: invalid F0, K or expiry date")
-    #             return False
-            
-    #         # Добавляем историческую волатильность
-    #         if hist_vol_result:
-    #             option['HIST_VOL'] = hist_vol_result
-    #             logger.debug(f"Added HIST_VOL to {option.get('SECID')}: {hist_vol_result}")
-            
-    #         # Рассчитываем время до экспирации
-    #         T = expiry_time(expiry_date) / (settings.TRADING_DAYS_PER_YEAR * settings.MINUTES_PER_DAY)
-    #         logger.debug(f"Time to expiry for {option.get('SECID')}: {T}")
-            
-    #         if T <= 0:
-    #             logger.debug(f"Skipping option {option.get('SECID')}: T <= 0")
-    #             return False
-            
-    #         # # Рассчитываем подразумеваемую волатильность
-    #         # iv = await implied_volatility(
-    #         #     prev_settle_price=prev_settle_price,
-    #         #     underlying_price=F0,
-    #         #     strike=K,
-    #         #     expiry_time=T,
-    #         #     rate=r,
-    #         #     option_type=option_type
-    #         # )
-            
-    #         # logger.debug(f"Implied volatility for {option.get('SECID')}: {iv}")
-            
-    #         # if math.isnan(iv):
-    #         #     logger.debug(f"Skipping option {option.get('SECID')}: IV is NaN")
-    #         #     return False
-            
-    #         # Добавляем все расчетные параметры
-    #         # option['IMPLIED_VOL'] = round(iv, 4)
-    #         theoretical_price = black76_price(F0, K, T, r, hist_vol_result, option_type)
-    #         option['THEORETICAL_PRICE'] = round(theoretical_price, 2)
-    #         option['DELTA'] = round(delta(F0, K, T, r, hist_vol_result, option_type), 6)
-    #         option['GAMMA'] = round(gamma(F0, K, T, r, hist_vol_result), 6)
-    #         option['VEGA'] = round(vega(F0, K, T, r, hist_vol_result), 6)
-    #         option['THETA'] = round(theta(F0, K, T, r, hist_vol_result, option_type), 6)
-            
-    #         logger.debug(f"Successfully calculated all params for {option.get('SECID')}")
-    #         return True
-            
-    #     except Exception as e:
-    #         logger.error(f"Error adding params to option {option.get('SECID')}: {e}")
-    #         return False
-    
+      
     async def load_candles(self, underlying: str, start_date: datetime = None, end_date: datetime = None):
         """Основной цикл загрузки свечей с учётом уже сохранённых данных"""
         # Определяем движок и рынок
@@ -261,7 +160,7 @@ class MOEXClient(HTTPClient):
             current_date += timedelta(days=1)
  
         # Параллельная загрузка (ограничиваем количество одновременно выполняемых задач)
-        sem = asyncio.Semaphore(40)
+        sem = asyncio.Semaphore(20)
 
         async def sem_task(date):
             async with sem:
