@@ -70,6 +70,10 @@ async def root(request: Request):
 async def favicon():
     return Response(status_code=204)
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
 @app.get("/{asset}")
 async def get_option(asset: str, request: Request):
     r = request.app.state.redis
