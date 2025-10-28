@@ -10,19 +10,16 @@ services:
     environment:
       DB_USER_FILE: /run/secrets/db_user
       DB_PASSWORD_FILE: /run/secrets/db_pass
-      DB_HOST_FILE: /run/secrets/db_host
     ports:
       - "8000:8000"
     networks: [obnet]
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8000/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8000/ || exit 1"]
       interval: 10s
       timeout: 3s
       retries: 10
     restart: unless-stopped
-    # mem_limit: 512m
-    # cpus: 0.9
-  
+
   frontend:
     build:
       context: .
@@ -39,11 +36,4 @@ services:
 
 networks:
   obnet:
-
-secrets:
-  db_user:
-    file: ./run/secrets/db_user
-  db_pass:
-    file: ./run/secrets/db_pass
-  db_host:
-    file: ./run/secrets/db_host
+    driver: bridge

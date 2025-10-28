@@ -13,7 +13,7 @@ async def lifespan(app: FastAPI):
     # Singletons on app.state
     app.state.moex_client = MOEXClient(base_url="https://iss.moex.com")
     app.state.redis = get_redis()
-    sem = asyncio.Semaphore(2)
+    sem = asyncio.Semaphore(1)
     
     # Warmup on startup
     try:
@@ -69,10 +69,6 @@ async def root(request: Request):
 @app.get("/favicon.ico")
 async def favicon():
     return Response(status_code=204)
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
 
 @app.get("/{asset}")
 async def get_option(asset: str, request: Request):
