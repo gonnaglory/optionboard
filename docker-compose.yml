@@ -10,6 +10,7 @@ services:
     environment:
       DB_USER_FILE: /run/secrets/db_user
       DB_PASSWORD_FILE: /run/secrets/db_pass
+      DB_HOST_FILE: /run/secrets/db_host
     ports:
       - "8000:8000"
     networks: [obnet]
@@ -37,3 +38,11 @@ services:
 networks:
   obnet:
     driver: bridge
+
+secrets:
+  db_user:
+    file: ./run/secrets/db_user
+  db_pass:
+    file: ./run/secrets/db_pass
+  db_host:
+    file: ./run/secrets/db_host
