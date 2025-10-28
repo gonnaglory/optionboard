@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
         warm_assets = assets[:10]
 
         async def warm_one(asset: str):
-            async with sem:  # гарантирует не более max_concurrent активных задач
+            async with sem:
                 try:
                     await app.state.moex_client.load_candles(asset)
                     await app.state.moex_client.add_params(asset)

@@ -13,7 +13,7 @@ services:
       DB_HOST_FILE: /run/secrets/db_host
     ports:
       - "8000:8000"
-    # networks: [obnet]
+    networks: [obnet]
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8000/health || exit 1"]
       interval: 10s
@@ -22,7 +22,7 @@ services:
     restart: unless-stopped
     # mem_limit: 512m
     # cpus: 0.9
-
+  
   frontend:
     build:
       context: .
@@ -31,14 +31,14 @@ services:
         VITE_API_URL: /api
     ports:
       - "3000:80"
-    # networks: [obnet]
+    networks: [obnet]
     depends_on:
       backend:
         condition: service_healthy
     restart: unless-stopped
 
-# networks:
-#   obnet:
+networks:
+  obnet:
 
 secrets:
   db_user:
