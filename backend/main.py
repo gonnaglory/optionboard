@@ -1,10 +1,11 @@
 from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, HTTPException, Request, Response
-import ujson
+import ujson, logging
 import asyncio
 from contextlib import asynccontextmanager
 from backend.http_client import MOEXClient, get_redis
 from backend.config import settings
+
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -26,11 +27,11 @@ async def lifespan(app: FastAPI):
             async with sem:
                 try:
                     await app.state.moex_client.load_candles(asset)
-                    await app.state.moex_client.add_params(asset)
-                except Exception:
-                    # Можно добавить логирование
+                except Exception as e:
+                    logging.error(f"Error in get_options: {e}")
                     pass
-
+                finally:
+                    await app.state.moex_client.add_params(asset)
         await asyncio.gather(*(warm_one(a) for a in assets))
         
         yield
