@@ -1,19 +1,24 @@
-# --- build stage ---
+# ---------- Build stage ----------
 FROM node:20-alpine AS build
-
 WORKDIR /app
-COPY package*.json ./
+
+# Опционально пробрасываем базовый URL API (будет в import.meta.env.VITE_API_URL)
+ARG VITE_API_URL=/api
+ENV VITE_API_URL=${VITE_API_URL}
+
+# Скопировать манифесты и установить зависимости
+COPY frontend/package*.json ./
 RUN npm ci
 
-COPY . .
+# Скопировать исходники и собрать
+COPY frontend ./
 RUN npm run build
 
-# --- run stage ---
-FROM nginx:alpine
-
+# ---------- Runtime (Nginx) ----------
+FROM nginx:1.27-alpine
+# Кладём собранный фронт
 COPY --from=build /app/dist /usr/share/nginx/html
-
-# кастомный nginx.conf
+# Наш конфиг nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80

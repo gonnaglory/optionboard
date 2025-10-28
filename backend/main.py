@@ -1,80 +1,81 @@
+from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, HTTPException, Request, Response
-import ujson, aiofiles, uvicorn
+import ujson
+import asyncio
 from contextlib import asynccontextmanager
+from backend.http_client import MOEXClient, get_redis
+from backend.config import settings
 
-from backend.http_client import MOEXClient
-from backend.models import OptionData
-from backend.config import settings 
+from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Создаём клиент при старте
-    app.state.moex_client = MOEXClient(base_url='https://iss.moex.com')
+    # Singletons on app.state
+    app.state.moex_client = MOEXClient(base_url="https://iss.moex.com")
+    app.state.redis = get_redis()
+
+    # Warmup on startup
     try:
-        # Загружаем данные опционов при запуске
         await app.state.moex_client.get_options()
-        async with aiofiles.open(settings.DATA_FOLDER / "UNDERLYINGASSETS.json", "r", encoding="utf-8") as f:
-            assets = ujson.loads(await f.read())
-            for asset in assets[:10]:
+
+        raw_assets = await app.state.redis.get(f"{settings.REDIS_PREFIX}UNDERLYINGASSETS")
+        assets: List[str] = ujson.loads(raw_assets) if raw_assets else []
+
+        # Limit how much we warm to keep startup fast
+        warm_assets = assets[:10]
+
+        async def warm_one(asset: str):
+            try:
                 await app.state.moex_client.load_candles(asset)
                 await app.state.moex_client.add_params(asset)
+            except Exception:
+                # Log if you have logging; don't fail startup on one asset
+                pass
 
-        
+        await asyncio.gather(*(warm_one(a) for a in warm_assets))
         yield
     finally:
-        # Закрываем соединение при завершении
         await app.state.moex_client.close()
-
+        # If your redis client needs closing, do it here (depends on get_redis impl)
 
 app = FastAPI(lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.get('/')
+@app.get("/")
 async def root(request: Request):
     """Root endpoint: показывает доступные базовые активы."""
-    moex_client = request.app.state.moex_client
+    r = request.app.state.redis
+
     try:
-        options = await moex_client.get_options()
-        return {"message": "OptionBoard API is running", "available_options": options}
+        # If you want to ensure the cache is fresh, call this conditionally or remove it:
+        # await request.app.state.moex_client.get_options()
+
+        raw = await r.get(f"{settings.REDIS_PREFIX}UNDERLYINGASSETS")
+        assets = ujson.loads(raw) if raw else []
+        return {"message": "OptionBoard API is running", "available_options": assets}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/favicon.ico")
 async def favicon():
-    # возвращаем пустую иконку или ничего
     return Response(status_code=204)
 
+@app.get("/{asset}")
+async def get_option(asset: str, request: Request):
+    r = request.app.state.redis
+    calc_key = f"{settings.REDIS_PREFIX}asset:{asset}:calc"
+    raw_key  = f"{settings.REDIS_PREFIX}asset:{asset}:raw"
 
-@app.get('/{asset}')
-async def get_option(asset: str):
-    
-    # file_path = settings.DATA_FOLDER / f"{asset}.json"
-
-    # await app.state.moex_client.get_options()
-    await app.state.moex_client.load_candles(asset)
-
-    await app.state.moex_client.add_params(asset)
-    
-    # try:
-    #     with open(file_path, 'r', encoding='utf-8') as file:
-    #         json_data = ujson.load(file)
-    #         return json_data
-
-    # except ujson.JSONDecodeError as e:
-    #     raise HTTPException(
-    #         status_code=500,
-    #         detail=f"Invalid JSON data in {asset}.json: {str(e)}"
-    #     )
-    # except ValidationError as e:
-    #     raise HTTPException(
-    #         status_code=500,
-    #         detail=f"Data validation error: {str(e)}"
-    #     )
-    # except Exception as e:
-    #     raise HTTPException(
-    #         status_code=500,
-    #         detail=f"Error processing request: {str(e)}"
-    #     )
-    
-# if __name__ == '__main__':
-#     uvicorn.run( "backend.main:app",host="0.0.0.0")
+    payload = await r.get(calc_key)
+    if not payload:
+        payload = await r.get(raw_key)
+    if not payload:
+        raise HTTPException(status_code=404, detail=f"No data in Redis for asset: {asset}")
+    return ujson.loads(payload if isinstance(payload, (str, bytes)) else ujson.dumps(payload))

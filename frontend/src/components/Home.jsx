@@ -1,14 +1,14 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getLogo } from "../utils/getLogo";
 
-
+const API_URL = import.meta.env.VITE_API_URL ?? "/api";
 
 const Showcase = () => {
     const [assets, setAssets] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:8000/") // ⚠️ при продакшене заменить на API_URL из .env
+    fetch(`${API_URL}/`)
       .then((res) => res.json())
       .then((data) => setAssets(data.available_options || []))
       .catch((err) => console.error("Ошибка загрузки активов:", err));

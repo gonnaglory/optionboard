@@ -8,27 +8,37 @@ services:
       - db_pass
       - db_host
     environment:
-      # если в коде сборка DSN из secrets, этого достаточно:
-      DB_PORT: "5432"
       DB_USER_FILE: /run/secrets/db_user
       DB_PASSWORD_FILE: /run/secrets/db_pass
       DB_HOST_FILE: /run/secrets/db_host
     ports:
-      - "80:8000"
-    networks: [obnet]
-    mem_limit: 512m
-    cpus: 0.9
+      - "8000:8000"
+    # networks: [obnet]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8000/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    # mem_limit: 512m
+    # cpus: 0.9
 
   frontend:
     build:
       context: .
       dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_URL: /api
     ports:
-      - "3000:3000"
-    networks: [obnet]
+      - "3000:80"
+    # networks: [obnet]
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
 
-networks:
-  obnet:
+# networks:
+#   obnet:
 
 secrets:
   db_user:

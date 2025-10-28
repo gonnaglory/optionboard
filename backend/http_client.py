@@ -1,5 +1,6 @@
 import ujson, aiofiles, logging, asyncio
 from aiohttp import ClientSession, TCPConnector
+import redis.asyncio as redis
 from pathlib import Path
 from typing import Any, List
 from datetime import datetime, timedelta, timezone
@@ -13,21 +14,28 @@ logger = logging.getLogger(__name__)
 if not logger.handlers:
     logging.basicConfig(level=settings.LOG_LEVEL, format=settings.LOG_FORMAT)
 
-async def save_json(data: Any, file_path: Path) -> None:
-    """Асинхронно сохраняет JSON, только если содержимое изменилось."""
-    serialized = ujson.dumps(data, indent=2, ensure_ascii=False)
+# async def save_json(data: Any, file_path: Path) -> None:
+#     """Асинхронно сохраняет JSON, только если содержимое изменилось."""
+#     serialized = ujson.dumps(data, indent=2, ensure_ascii=False)
 
-    # Если файл существует и данные совпадают — не пишем
-    if file_path.exists():
-        async with aiofiles.open(file_path, "r", encoding="utf-8") as f:
-            existing = await f.read()
-        if existing == serialized:
-            return
+#     # Если файл существует и данные совпадают — не пишем
+#     if file_path.exists():
+#         async with aiofiles.open(file_path, "r", encoding="utf-8") as f:
+#             existing = await f.read()
+#         if existing == serialized:
+#             return
 
-    file_path.parent.mkdir(parents=True, exist_ok=True)
-    async with aiofiles.open(file_path, "w", encoding="utf-8") as f:
-        await f.write(serialized)
+#     file_path.parent.mkdir(parents=True, exist_ok=True)
+#     async with aiofiles.open(file_path, "w", encoding="utf-8") as f:
+#         await f.write(serialized)
 
+_redis = None
+
+def get_redis():
+    global _redis
+    if _redis is None:
+        _redis = redis.from_url(settings.REDIS_URL, encoding="utf-8", decode_responses=True)
+    return _redis
 
 class HTTPClient:
     def __init__(self, base_url: str):
@@ -66,7 +74,8 @@ class MOEXClient(HTTPClient):
             assets = sorted({row[col_indices["UNDERLYINGASSET"]] for row in data_rows})
 
             # Сохраняем список доступных активов
-            await save_json(assets, settings.DATA_FOLDER / "UNDERLYINGASSETS.json")
+            r = get_redis()
+            await r.set(f"{settings.REDIS_PREFIX}UNDERLYINGASSETS", ujson.dumps(assets))
 
             # Разбиваем данные по активам
             for asset in assets:
@@ -82,7 +91,8 @@ class MOEXClient(HTTPClient):
                     filtered.append(option)
                     
                 # Сохраняем сырые данные без расчетных параметров
-                await save_json(filtered, settings.DATA_FOLDER / f"{asset}.json")
+                await r.set(f"{settings.REDIS_PREFIX}asset:{asset}:raw", ujson.dumps(filtered))
+                await r.delete(f"{settings.REDIS_PREFIX}asset:{asset}:calc") # очищаем вычисленные данные, чтобы не отдавать устаревшее
             
             return assets
             
@@ -93,36 +103,28 @@ class MOEXClient(HTTPClient):
     async def add_params(self, asset: str):
         """Добавляет расчетные параметры для всех опционов актива сразу"""
         try:
-            asset_file = settings.DATA_FOLDER / f"{asset}.json"
-            if not asset_file.exists():
-                logger.warning(f"File {asset_file} not found")
+            r = get_redis()
+            raw_key = f"{settings.REDIS_PREFIX}asset:{asset}:raw"
+            calc_key = f"{settings.REDIS_PREFIX}asset:{asset}:calc"
+
+            # читаем «сырой» массив опционов из Redis
+            raw = await r.get(raw_key)
+            if not raw:
+                logging.warning("No raw options in Redis for %s", asset)
                 return
-            
-            # Загружаем данные опционов
-            async with aiofiles.open(asset_file, "r", encoding="utf-8") as f:
-                options_data = ujson.loads(await f.read())
-            
-            logger.debug(f"Loaded {len(options_data)} options for {asset}")
-            
-            # Получаем историческую волатильность
-            hist_vol_result = await hist_vol(asset)
-            if hist_vol_result is None:
-                logger.warning(f"No historical volatility for {asset}")
+            options_data = ujson.loads(raw)
+
+            hist = await hist_vol(asset)  # использует БД свечей, как и раньше :contentReference[oaicite:3]{index=3}
+            if hist is None:
+                logging.warning("No historical volatility for %s", asset)
                 return
 
-            hist_vol_value = hist_vol_result  # Берем значение волатильности
-            
-            # Обрабатываем ВСЕ опционы актива сразу
-            updated_options = await process_asset_options(options_data, hist_vol_value)
-            
-            # Сохраняем обновленные данные
-            await save_json(updated_options, asset_file)
+            updated_options = await process_asset_options(options_data, hist)  # векторные расчёты :contentReference[oaicite:4]{index=4}
+
+            # сохраняем уже «обогащённые» данные в Redis
+            await r.set(calc_key, ujson.dumps(updated_options))
             logger.info(f"Added params to {asset} - processed {len(updated_options)} options")
-            
-            # # Логируем статистику
-            # valid_count = sum(1 for opt in updated_options if opt.get('IMPLIED_VOL') is not None)
-            # logger.debug(f"Valid calculations: {valid_count}/{len(updated_options)}")
-            
+                        
         except Exception as e:
             logger.error(f"Error adding params to {asset}: {e}")
     

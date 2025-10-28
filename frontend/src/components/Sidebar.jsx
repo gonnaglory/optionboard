@@ -1,14 +1,16 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { getLogo } from "../utils/getLogo";
 
+const API_URL = import.meta.env.VITE_API_URL ?? "/api";
+
 const Sidebar = () => {
   const { asset } = useParams();
   const [assets, setAssets] = useState([]);
-
+  
   useEffect(() => {
-    fetch("http://localhost:8000/") // ⚠️ аналогично заменить на API_URL
+    fetch(`${API_URL}/`)
       .then((res) => res.json())
       .then((data) => setAssets(data.available_options || []))
       .catch((err) => console.error("Ошибка загрузки активов:", err));

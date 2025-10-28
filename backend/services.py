@@ -3,6 +3,8 @@ from typing import Optional, List, Dict
 import numpy as np
 from aiohttp import ClientSession
 from aiocache import cached, SimpleMemoryCache
+from aiocache.serializers import JsonSerializer
+from aiocache.plugins import TimingPlugin
 from scipy.stats import norm
 from scipy.optimize import brentq
 from datetime import datetime, timedelta
@@ -330,6 +332,7 @@ def black76_price(F0: float, K: float, T: float, r: float, sigma: float, option_
 # ---------------- IMPLIED VOLATILITY ----------------
 
 @cached(ttl=600, cache=SimpleMemoryCache)
+
 async def implied_volatility(prev_settle_price: float,
                              underlying_price: float,
                              strike: float,

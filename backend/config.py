@@ -9,6 +9,10 @@ class Settings(BaseSettings):
     DBPASS: str = ""
     DBHOST: str = ""
     
+    # --- Redis ---
+    REDIS_URL: str = "redis://redis:6379/0"
+    REDIS_PREFIX: str = "optionboard:"
+        
     # --- Database ---
     SQL_DATABASE_URL: str = ""
     
@@ -24,7 +28,7 @@ class Settings(BaseSettings):
     HIST_WINDOW_MINUTES: int = TRADING_DAYS_PER_YEAR * MINUTES_PER_DAY // 12
 
     # --- Implied Volatility Solver ---
-    IV_RATE: float = 0.19
+    IV_RATE: float = 0.16
     IV_TOL: float = 1e-6
     IV_MAXITER: int = 100
     IV_VOL_LOWER: float = 1e-6
@@ -73,7 +77,7 @@ class Settings(BaseSettings):
             return path.read_text().strip()
         return ""
     
-    # model_config = SettingsConfigDict(env_file='.env')
+    model_config = SettingsConfigDict(env_file='.env')
 
 settings = Settings()
 
@@ -87,3 +91,4 @@ settings.DBPASS = settings._read_secret("db_pass")
 settings.DBHOST = settings._read_secret("db_host")
 
 settings.SQL_DATABASE_URL = f"postgresql+asyncpg://{settings.DBUSER}:{settings.DBPASS}@{settings.DBHOST}:5432/postgres"
+settings.REDIS_URL=f"redis://:{settings.DBPASS}@{settings.DBHOST}:6379/0"
