@@ -22,9 +22,6 @@ async def lifespan(app: FastAPI):
         raw_assets = await app.state.redis.get(f"{settings.REDIS_PREFIX}UNDERLYINGASSETS")
         assets: List[str] = ujson.loads(raw_assets) if raw_assets else []
 
-        # Limit how much we warm to keep startup fast
-        warm_assets = assets[:10]
-
         async def warm_one(asset: str):
             async with sem:
                 try:
@@ -34,7 +31,7 @@ async def lifespan(app: FastAPI):
                     # Можно добавить логирование
                     pass
 
-        await asyncio.gather(*(warm_one(a) for a in warm_assets))
+        await asyncio.gather(*(warm_one(a) for a in assets))
         
         yield
     finally:
