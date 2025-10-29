@@ -14,21 +14,6 @@ logger = logging.getLogger(__name__)
 if not logger.handlers:
     logging.basicConfig(level=settings.LOG_LEVEL, format=settings.LOG_FORMAT)
 
-# async def save_json(data: Any, file_path: Path) -> None:
-#     """Асинхронно сохраняет JSON, только если содержимое изменилось."""
-#     serialized = ujson.dumps(data, indent=2, ensure_ascii=False)
-
-#     # Если файл существует и данные совпадают — не пишем
-#     if file_path.exists():
-#         async with aiofiles.open(file_path, "r", encoding="utf-8") as f:
-#             existing = await f.read()
-#         if existing == serialized:
-#             return
-
-#     file_path.parent.mkdir(parents=True, exist_ok=True)
-#     async with aiofiles.open(file_path, "w", encoding="utf-8") as f:
-#         await f.write(serialized)
-
 _redis = None
 
 def get_redis():
@@ -160,7 +145,7 @@ class MOEXClient(HTTPClient):
             current_date += timedelta(days=1)
  
         # Параллельная загрузка (ограничиваем количество одновременно выполняемых задач)
-        sem = asyncio.Semaphore(20)
+        sem = asyncio.Semaphore(5)
 
         async def sem_task(date):
             async with sem:
