@@ -1,43 +1,11 @@
 // VolatilitySmile.jsx
-import React, { memo, useMemo } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ReferenceLine,
-  ResponsiveContainer,
-  Scatter,
-} from "recharts";
-
-const TriangleUp = React.memo(({ fill, x, y }) => (
-  <path d={`M${x},${y} l4,8 l-8,0 Z`} fill={fill} />
-));
-TriangleUp.displayName = "TriangleUp";
-
-const TriangleDown = React.memo(({ fill, x, y }) => (
-  <path d={`M${x},${y} l4,-8 l-8,0 Z`} fill={fill} />
-));
-TriangleDown.displayName = "TriangleDown";
-
-const CustomTooltip = React.memo(({ active, payload, label }) => {
-  if (!active || !payload) return null;
-
-  return (
-    <div className="bg-slate-900/95 border border-slate-700 rounded p-2 text-xs">
-      <p className="text-slate-300 mb-1">Strike: {label}</p>
-      {payload.map((entry, index) => (
-        <p key={index} style={{ color: entry.color }}>
-          {entry.name}: {entry.value}
-        </p>
-      ))}
-    </div>
-  );
-});
-CustomTooltip.displayName = "CustomTooltip";
+import React, { memo, useMemo, useRef, useEffect } from "react";
+import * as echarts from "echarts";
 
 const VolatilitySmile = memo(({ data = [], height = 480 }) => {
+  const chartRef = useRef(null);
+  const chartInstance = useRef(null);
+
   // Преобразуем данные для VolatilitySmile
   const { grouped, strikes, underlyingPrice, histVol } = useMemo(() => {
     const grouped = {};
@@ -115,23 +83,274 @@ const VolatilitySmile = memo(({ data = [], height = 480 }) => {
     [underlyingPrice]
   );
 
-  const scatterData = useMemo(
-    () => ({
-      callBid: smileData
-        .map((d) => ({ x: d.strike, y: d.callBid }))
-        .filter((d) => d.y !== null),
-      callAsk: smileData
-        .map((d) => ({ x: d.strike, y: d.callAsk }))
-        .filter((d) => d.y !== null),
-      putBid: smileData
-        .map((d) => ({ x: d.strike, y: d.putBid }))
-        .filter((d) => d.y !== null),
-      putAsk: smileData
-        .map((d) => ({ x: d.strike, y: d.putAsk }))
-        .filter((d) => d.y !== null),
-    }),
-    [smileData]
-  );
+  // Подготавливаем данные для ECharts
+  const chartData = useMemo(() => {
+    const callIVData = [];
+    const putIVData = [];
+    const callBidData = [];
+    const callAskData = [];
+    const putBidData = [];
+    const putAskData = [];
+
+    smileData.forEach((item) => {
+      if (item.ivC !== null) {
+        callIVData.push([item.strike, item.ivC]);
+      }
+      if (item.ivP !== null) {
+        putIVData.push([item.strike, item.ivP]);
+      }
+      if (item.callBid !== null) {
+        callBidData.push([item.strike, item.callBid]);
+      }
+      if (item.callAsk !== null) {
+        callAskData.push([item.strike, item.callAsk]);
+      }
+      if (item.putBid !== null) {
+        putBidData.push([item.strike, item.putBid]);
+      }
+      if (item.putAsk !== null) {
+        putAskData.push([item.strike, item.putAsk]);
+      }
+    });
+
+    return {
+      callIVData,
+      putIVData,
+      callBidData,
+      callAskData,
+      putBidData,
+      putAskData,
+    };
+  }, [smileData]);
+
+  // Настройки ECharts
+  const option = useMemo(() => {
+    const series = [];
+
+    // Call IV line
+    if (chartData.callIVData.length > 0) {
+      series.push({
+        name: "Call IV",
+        type: "line",
+        data: chartData.callIVData,
+        symbol: "none",
+        lineStyle: {
+          color: "#3b82f6",
+          width: 1.5,
+        },
+        z: 10,
+      });
+    }
+
+    // Put IV line
+    if (chartData.putIVData.length > 0) {
+      series.push({
+        name: "Put IV",
+        type: "line",
+        data: chartData.putIVData,
+        symbol: "none",
+        lineStyle: {
+          color: "#ec4899",
+          width: 1.5,
+        },
+        z: 10,
+      });
+    }
+
+    // Historical volatility reference line
+    if (hv != null) {
+      series.push({
+        name: "Hist Vol",
+        type: "line",
+        markLine: {
+          silent: true,
+          lineStyle: {
+            color: "#22d3ee",
+            type: "dashed",
+            width: 1,
+          },
+          data: [
+            {
+              yAxis: hv,
+            },
+          ],
+        },
+        z: 5,
+      });
+    }
+
+    // Spot price reference line
+    if (spotPrice != null) {
+      series.push({
+        name: "Spot Price",
+        type: "line",
+        markLine: {
+          silent: true,
+          lineStyle: {
+            color: "#f59e0b",
+            type: "dashed",
+            width: 1,
+          },
+          data: [
+            {
+              xAxis: spotPrice,
+            },
+          ],
+        },
+        z: 5,
+      });
+    }
+
+    // Bid/Ask scatter points
+    if (chartData.callBidData.length > 0) {
+      series.push({
+        name: "Call Bid",
+        type: "scatter",
+        data: chartData.callBidData,
+        symbol: "triangle",
+        symbolSize: 8,
+        itemStyle: {
+          color: "#10b981",
+        },
+        z: 20,
+      });
+    }
+
+    if (chartData.callAskData.length > 0) {
+      series.push({
+        name: "Call Ask",
+        type: "scatter",
+        data: chartData.callAskData,
+        symbol: "triangleDown",
+        symbolSize: 8,
+        itemStyle: {
+          color: "#10b981",
+        },
+        z: 20,
+      });
+    }
+
+    if (chartData.putBidData.length > 0) {
+      series.push({
+        name: "Put Bid",
+        type: "scatter",
+        data: chartData.putBidData,
+        symbol: "triangle",
+        symbolSize: 8,
+        itemStyle: {
+          color: "#ef4444",
+        },
+        z: 20,
+      });
+    }
+
+    if (chartData.putAskData.length > 0) {
+      series.push({
+        name: "Put Ask",
+        type: "scatter",
+        data: chartData.putAskData,
+        symbol: "triangleDown",
+        symbolSize: 8,
+        itemStyle: {
+          color: "#ef4444",
+        },
+        z: 20,
+      });
+    }
+
+    return {
+      animation: false,
+      tooltip: {
+        trigger: "axis",
+        backgroundColor: "rgba(15, 23, 42, 0.95)",
+        borderColor: "#475569",
+        textStyle: {
+          color: "#cbd5e1",
+        },
+        axisPointer: {
+          type: "cross",
+        },
+        formatter: function (params) {
+          const strike = params[0].value[0];
+          let result = `<div style="font-size: 12px; margin-bottom: 4px; color: #cbd5e1;">Strike: ${strike}</div>`;
+
+          params.forEach((param) => {
+            const color = param.color;
+            const name = param.seriesName;
+            const value = param.value[1];
+            result += `<div style="color: ${color}; font-size: 11px;">${name}: ${value}</div>`;
+          });
+
+          return result;
+        },
+      },
+      grid: {
+        left: "3%",
+        right: "3%",
+        top: "3%",
+        bottom: "3%",
+        containLabel: true,
+      },
+      xAxis: {
+        type: "value",
+        axisLine: {
+          lineStyle: {
+            color: "#64748b",
+          },
+        },
+        axisLabel: {
+          color: "#64748b",
+          fontSize: 10,
+        },
+        splitLine: {
+          lineStyle: {
+            color: "rgba(100, 116, 139, 0.2)",
+          },
+        },
+      },
+      yAxis: {
+        type: "value",
+        axisLine: {
+          lineStyle: {
+            color: "#64748b",
+          },
+        },
+        axisLabel: {
+          color: "#64748b",
+          fontSize: 10,
+        },
+        splitLine: {
+          lineStyle: {
+            color: "rgba(100, 116, 139, 0.2)",
+          },
+        },
+      },
+      series: series,
+    };
+  }, [chartData, hv, spotPrice]);
+
+  // Инициализация и обновление графика
+  useEffect(() => {
+    if (!chartRef.current) return;
+
+    if (!chartInstance.current) {
+      chartInstance.current = echarts.init(chartRef.current);
+    }
+
+    chartInstance.current.setOption(option);
+
+    const handleResize = () => {
+      chartInstance.current?.resize();
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      chartInstance.current?.dispose();
+      chartInstance.current = null;
+    };
+  }, [option]);
 
   if (!smileData.length) {
     return (
@@ -152,77 +371,7 @@ const VolatilitySmile = memo(({ data = [], height = 480 }) => {
         Volatility Smile
       </h3>
       <div className="flex-1 min-h-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={smileData}
-            margin={{ left: 4, right: 4, top: 4, bottom: 4 }}
-          >
-            <XAxis
-              type="number"
-              dataKey="strike"
-              domain={["auto", "auto"]}
-              stroke="#64748b"
-              tick={{ fill: "#64748b", fontSize: 10 }}
-              tickSize={4}
-            />
-            <YAxis
-              stroke="#64748b"
-              tick={{ fill: "#64748b", fontSize: 10 }}
-              tickSize={4}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Line
-              dataKey="ivC"
-              stroke="#3b82f6"
-              name="Call IV"
-              dot={false}
-              strokeWidth={1.5}
-            />
-            <Line
-              dataKey="ivP"
-              stroke="#ec4899"
-              name="Put IV"
-              dot={false}
-              strokeWidth={1.5}
-            />
-            {hv != null && (
-              <ReferenceLine
-                y={hv}
-                stroke="#22d3ee"
-                strokeDasharray="3 3"
-                strokeWidth={1}
-              />
-            )}
-            {spotPrice != null && (
-              <ReferenceLine
-                x={spotPrice}
-                stroke="#f59e0b"
-                strokeDasharray="2 2"
-                strokeWidth={1}
-              />
-            )}
-            <Scatter
-              name="Call Bid"
-              data={scatterData.callBid}
-              shape={<TriangleUp fill="#10b981" />}
-            />
-            <Scatter
-              name="Call Ask"
-              data={scatterData.callAsk}
-              shape={<TriangleDown fill="#10b981" />}
-            />
-            <Scatter
-              name="Put Bid"
-              data={scatterData.putBid}
-              shape={<TriangleUp fill="#ef4444" />}
-            />
-            <Scatter
-              name="Put Ask"
-              data={scatterData.putAsk}
-              shape={<TriangleDown fill="#ef4444" />}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <div ref={chartRef} style={{ width: "100%", height: "100%" }} />
       </div>
 
       <div className="flex flex-wrap gap-2 mt-2 text-xs">
