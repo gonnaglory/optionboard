@@ -5,6 +5,7 @@ WORKDIR /app
 # Опционально пробрасываем базовый URL API (будет в import.meta.env.VITE_API_URL)
 ARG VITE_API_URL=/api
 ENV VITE_API_URL=${VITE_API_URL}
+ENV NODE_OPTIONS="--max-old-space-size=4096"
 
 # Скопировать манифесты и установить зависимости
 COPY frontend/package*.json ./
@@ -12,7 +13,7 @@ RUN npm ci
 
 # Скопировать исходники и собрать
 COPY frontend ./
-RUN npm run build
+RUN npm run build --verbose
 
 # ---------- Runtime (Nginx) ----------
 FROM nginx:1.27-alpine
