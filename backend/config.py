@@ -1,23 +1,23 @@
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from datetime import datetime, date, time
+from datetime import datetime, time
 
 class Settings(BaseSettings):
     # --- Keys / Secrets ---
-    MOEX_API_KEY: str = ""
-    DBUSER: str = ""
-    DBPASS: str = ""
-    DBHOST: str = ""
+    API_KEY: str = ""
     
     # --- Redis ---
-    REDIS_URL: str = "redis://redis:6379/0"
-    REDIS_PREFIX: str = "optionboard:"
+    REDIS_HOST: str = ""
         
-    # --- Database ---
-    SQL_DATABASE_URL: str = ""
-    
+    # --- Database ---    
+    CLICKHOUSE_HOST: str = ""
+    CLICKHOUSE_PORT: int = 8123
+    CLICKHOUSE_USER: str = "default"
+    CLICKHOUSE_PASSWORD: str = "default"
+    CLICKHOUSE_DATABASE: str = "default"
+    CLICKHOUSE_SECURE: bool = False  # если HTTPS, то True
     # --- Paths ---
-    DATA_FOLDER: Path = Path(__file__).parent / "data"
+    DATA_FOLDER: Path = Path(__file__).parent
 
     # --- Network ---
     TIMEOUT: int = 10
@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     IV_MAXITER: int = 100
     IV_VOL_LOWER: float = 1e-6
     IV_VOL_UPPER: float = 5.0
+    
+    # --- GEX ---
+    CONTRACT_MULTIPLIER: float = 1.0     # множитель контракта (например, 100 для акций)
+    GEX_DECIMALS: int = 6               # округление в ответе
 
     # --- Futures codes ---
     MONTH_CODES: dict = {3: 'H', 6: 'M', 9: 'U', 12: 'Z'}
@@ -81,14 +85,9 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+settings.API_KEY = settings._read_secret("api_key")
+settings.CLICKHOUSE_USER = settings._read_secret("db_user")
+settings.CLICKHOUSE_PASSWORD = settings._read_secret("db_pass")
+settings.CLICKHOUSE_HOST = settings._read_secret("db_host")
+settings.REDIS_HOST = settings._read_secret("db_host")
 
-settings.MOEX_API_KEY = settings._read_secret("moex_api_key")
-
-settings.DBUSER = settings._read_secret("db_user")
-
-settings.DBPASS = settings._read_secret("db_pass")
-
-settings.DBHOST = settings._read_secret("db_host")
-
-settings.SQL_DATABASE_URL = f"postgresql+asyncpg://{settings.DBUSER}:{settings.DBPASS}@{settings.DBHOST}:5432/postgres"
-settings.REDIS_URL=f"redis://:{settings.DBPASS}@{settings.DBHOST}:6379/0"

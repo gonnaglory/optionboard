@@ -3,8 +3,13 @@ FROM python:3.12-slim
 # переменные окружения
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV NUMBA_THREADING_LAYER=tbb
 
 WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libtbb12 \
+    && rm -rf /var/lib/apt/lists/*
 
 # зависимости
 COPY backend/requirements.txt .

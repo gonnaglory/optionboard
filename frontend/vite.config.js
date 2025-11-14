@@ -1,11 +1,11 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
   build: {
     sourcemap: false,
-    target: 'es2019',
-    chunkSizeWarningLimit: 800
-  }
-})
+    target: "es2019",
+    chunkSizeWarningLimit: 800,
+  },
+});
